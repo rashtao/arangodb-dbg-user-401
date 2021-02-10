@@ -19,6 +19,7 @@ public class App {
     // user:test
     static HttpClient userClient2 = createClient("coordinator2", 8529, "Basic dXNlcjp0ZXN0");
 
+    static String errMsg = "not authorized to execute this request";
 
     /**
      * before executing:
@@ -43,43 +44,48 @@ public class App {
             System.out.println();
 
             String dbName = "db-" + UUID.randomUUID().toString();
-            System.out.println(dbName);
 
             // create db giving permissions to user
-            String createDbBody = "{\"name\": \"" + dbName + "\", \"users\": [{\"username\": \"user\"}]}";
-            String createDbRes = rootClient
-                    .headers(h -> h.set(HttpHeaderNames.CONTENT_LENGTH, createDbBody.length()))
-                    .post()
-                    .uri("/_api/database")
-                    .send(ByteBufFlux.fromString(Mono.just(createDbBody)))
-                    .responseContent()
-                    .aggregate()
-                    .asString()
-                    .block();
-
-            System.out.println(createDbRes);
+            System.out.println("Sending root request to create database to coordinator2: " + dbName);
+            String createDbRes = sendCreateDbRequest(dbName);
+            System.out.println("--> " + createDbRes);
 
             // create collection within the created db, with user credentials
+            System.out.println("Sending user request to create collection to coordinator1 ...");
             String createCollectionRes = sendUserRequest(dbName, userClient1);
-            System.out.println(createCollectionRes);
+            System.out.println("--> " + createCollectionRes);
 
-            if (createCollectionRes.contains("not authorized to execute this request")) {
+            if (createCollectionRes.contains(errMsg)) {
                 System.out.println("retrying in 5 seconds...");
                 Thread.sleep(5000);
+                System.out.println("Sending user request to create collection to coordinator1 ...");
                 String c1Res = sendUserRequest(dbName, userClient1);
-                System.out.println("from coordinator1: " + c1Res);
+                System.out.println("--> " + c1Res);
 
-                if (c1Res.contains("not authorized to execute this request")) {
-                    System.out.println("retrying with the same coordinator to which db creation request has been sent...");
+                if (c1Res.contains(errMsg)) {
+                    System.out.println("Sending user request to create collection to coordinator2 ...");
                     String c2Res = sendUserRequest(dbName, userClient2);
-                    System.out.println("from coordinator2: " + c2Res);
-                    if (c2Res.contains("not authorized to execute this request")) {
-                        System.out.println("giving up");
+                    System.out.println("--> " + c2Res);
+                    if (c2Res.contains(errMsg)) {
+                        System.out.println("giving up...");
                         System.exit(1);
                     }
                 }
             }
         }
+    }
+
+    static String sendCreateDbRequest(String dbName) {
+        String createDbBody = "{\"name\": \"" + dbName + "\", \"users\": [{\"username\": \"user\"}]}";
+        return rootClient
+                .headers(h -> h.set(HttpHeaderNames.CONTENT_LENGTH, createDbBody.length()))
+                .post()
+                .uri("/_api/database")
+                .send(ByteBufFlux.fromString(Mono.just(createDbBody)))
+                .responseContent()
+                .aggregate()
+                .asString()
+                .block();
     }
 
     static String sendUserRequest(String dbName, HttpClient httpClient) {
