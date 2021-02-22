@@ -1,5 +1,8 @@
 # arangodb-dbg-user-401
 
+See [https://arangodb.atlassian.net/browse/BTS-294](https://arangodb.atlassian.net/browse/BTS-294).
+
+
 Before executing:
 - start a local cluster reachable at `coordinator1:8529` and `coordinator2:8529`, with root password `test`
 - create a db user:
