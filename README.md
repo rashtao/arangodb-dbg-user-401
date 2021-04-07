@@ -10,6 +10,14 @@ Before executing:
 $ curl -u root:test http://coordinator1:8529/_api/user -d '{"user": "user", "passwd": "test"}'
 ```
 
+
+## execute
+
+```shell script
+mvn compile
+mvn exec:java -Dexec.mainClass=App
+```
+
 expected behavior:
 ```shell script
 {"error":false,"code":201,"result":true}
@@ -20,11 +28,4 @@ actual behavior:
 ```shell script
 {"error":false,"code":201,"result":true}
 {"error":true,"errorNum":11,"errorMessage":"not authorized to execute this request","code":401}
-```
-
-## execute
-
-```shell script
-mvn compile
-mvn exec:java -Dexec.mainClass=App
 ```
