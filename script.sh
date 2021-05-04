@@ -34,6 +34,9 @@ retry_create_collection() {
 curl -u root:test "http://$COORDINATOR2/_api/user" -d '{"user": "user", "passwd": "test"}'
 
 while true; do
+
+  echo ""
+  echo "---------"
   DBNAME="db-$(openssl rand -hex 8)"
 
   create_db $COORDINATOR2
